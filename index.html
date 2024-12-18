@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Samples</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .audio-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .audio-item button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio Samples</h1>
+    <div id="audioList"></div>
+    <script>
+        async function fetchAudioFiles() {
+            const response = await fetch('samples/');
+            if (!response.ok) {
+                document.getElementById('audioList').innerText = 'Could not load audio files.';
+                return;
+            }
+
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(await response.text(), 'text/html');
+            const links = Array.from(htmlDoc.querySelectorAll('a'));
+            const audioFiles = links
+                .map(link => link.getAttribute('href'))
+                .filter(file => /\.(mp3|wav|ogg)$/i.test(file));
+
+            // Extract unique sample names (removing _preview and _backup suffixes)
+            const sampleMap = {};
+            audioFiles.forEach(file => {
+                const baseName = file.replace(/(_preview|_backup)\.(mp3|wav|ogg)$/i, '');
+                const isPreview = /_preview\.(mp3|wav|ogg)$/i.test(file);
+                const isBackup = /_backup\.(mp3|wav|ogg)$/i.test(file);
+
+                if (!sampleMap[baseName]) {
+                    sampleMap[baseName] = { preview: null, backup: null };
+                }
+                if (isPreview) sampleMap[baseName].preview = file;
+                if (isBackup) sampleMap[baseName].backup = file;
+            });
+
+            const audioList = document.getElementById('audioList');
+            Object.entries(sampleMap).forEach(([baseName, files]) => {
+                const audioItem = document.createElement('div');
+                audioItem.className = 'audio-item';
+
+                const name = document.createElement('span');
+                name.textContent = baseName;
+
+                const playButton = document.createElement('button');
+                playButton.textContent = 'Play';
+                playButton.disabled = !files.preview;
+                playButton.onclick = () => {
+                    const audio = new Audio(`samples/${files.preview}`);
+                    audio.play();
+                };
+
+                const sendButton = document.createElement('button');
+                sendButton.textContent = 'Send';
+                sendButton.disabled = !files.backup;
+                sendButton.onclick = () => {
+                    const audio = new Audio(`samples/${files.backup}`);
+                    audio.play();
+                };
+
+                audioItem.appendChild(name);
+                audioItem.appendChild(playButton);
+                audioItem.appendChild(sendButton);
+                audioList.appendChild(audioItem);
+            });
+        }
+
+        fetchAudioFiles();
+    </script>
+</body>
+</html>
