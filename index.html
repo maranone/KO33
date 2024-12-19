@@ -26,7 +26,7 @@
     <div id="audioList"></div>
     <script>
         async function fetchAudioFiles() {
-            const response = await fetch('/samples/');
+            const response = await fetch('samples/');
             if (!response.ok) {
                 document.getElementById('audioList').innerText = 'Could not load audio files.';
                 return;
